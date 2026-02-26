@@ -1,0 +1,7 @@
+POST http://localhost:8080/api/rooms/create
+Content-Type: application/json
+
+{
+  "roomName": "手搓代码高级俱乐部",
+  "hostId": "handzhao_001"
+}
