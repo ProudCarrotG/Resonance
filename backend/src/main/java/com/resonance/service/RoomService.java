@@ -23,4 +23,11 @@ public interface RoomService {
      * 根据 WebSocket 传来的指令，实时更新 Redis 中的房间播放状态
      */
     void updateRoomState(String roomId, RoomMessage message);
+
+
+    /**
+     * 如果断开连接的是房主，则解散房间（从 Redis 中删除）
+     * @return true表示房间被成功解散，false表示不需要解散
+     */
+    boolean disbandRoomIfHost(String roomId, String userId);
 }

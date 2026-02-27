@@ -79,9 +79,40 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
      */
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        //把用户从花名册中移除
+        // 1. 先把这个断开的人从花名册划掉
         sessions.remove(session.getId());
-        String userId = (String)session.getAttributes().get("userId");
-        System.out.println(" 用户" + userId+"断开连接！当前连接数：" + sessions.size());
+
+        // 2. 摸一下他的便签纸，看看他是哪个房间的谁
+        String roomId = (String) session.getAttributes().get("roomId");
+        String userId = (String) session.getAttributes().get("userId");
+
+        System.out.println("💔 用户 " + userId + " 断开了连接");
+
+        if (roomId != null && userId != null) {
+            // 3. 呼叫大管家：看看这个退出的家伙是不是房主，需不需要炸毁房间？
+            boolean isDisbanded = roomService.disbandRoomIfHost(roomId, userId);
+
+            if (isDisbanded) {
+                System.out.println("💥 房主 " + userId + " 离开，房间 " + roomId + " 已被彻底销毁！");
+
+                // 4. 组装一条“房间解散”的专属暗号
+                RoomMessage disbandMsg = new RoomMessage();
+                disbandMsg.setType("ROOM_DISBANDED");
+                disbandMsg.setRoomId(roomId);
+                String disbandPayload = objectMapper.writeValueAsString(disbandMsg);
+
+                // 5. 广播给这个房间里所有还在眼巴巴等着的听众
+                for (WebSocketSession s : sessions.values()) {
+                    if (s.isOpen()) {
+                        String targetRoomId = (String) s.getAttributes().get("roomId");
+                        if (roomId.equals(targetRoomId)) {
+                            s.sendMessage(new TextMessage(disbandPayload));
+                             //强制切断听众的连接
+                            s.close();
+                        }
+                    }
+                }
+            }
+        }
     }
 }

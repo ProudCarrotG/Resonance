@@ -125,4 +125,27 @@ public class RoomServiceImpl implements RoomService {
             System.err.println("同步更新redis失败");
         }
     }
+
+
+    @Override
+    public boolean disbandRoomIfHost(String roomId, String userId) {
+        String redisKey = "resonance:room" + roomId;
+        String roomJson = redisTemplate.opsForValue().get(redisKey);
+
+
+        if (roomJson == null) return false;
+
+        try{
+            Room room = objectMapper.readValue(roomJson,Room.class);
+            if(userId.equals(room.getHostId())){
+                redisTemplate.delete(redisKey);
+                return true;
+            }
+            return false;
+
+        }catch (Exception e){
+            System.err.println("❌ 检查并解散房间失败：" + e.getMessage());
+        }
+        return false;
+    }
 }
