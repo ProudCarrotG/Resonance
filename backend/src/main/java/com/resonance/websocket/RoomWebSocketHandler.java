@@ -1,5 +1,7 @@
 package com.resonance.websocket;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.resonance.dto.RoomMessage;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -13,7 +15,12 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
     //这是一个及其重要的“花名册” ： 用来记住当前有哪些用户连着Session
     //使用ConcurrentHashMap，是为了保证多线程并发时的安全
     private static final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+    //引入json转换神器
+    private final ObjectMapper objectMapper;
 
+    public RoomWebSocketHandler(ObjectMapper objectMapper){
+        this.objectMapper = objectMapper;
+    }
     /**
      * 当有新的连接建立时，会调用这个方法
      */
@@ -30,12 +37,36 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         String payload = message.getPayload();
-        System.out.println(" 收到消息：" + payload);
-        for (WebSocketSession s : sessions.values()) {
-            if(s.isOpen()){
-                s.sendMessage(new TextMessage(payload));
+
+        try{
+            //1.将前端的发来的json字符串，转为RoomMessage
+            RoomMessage roomMessage = objectMapper.readValue(payload,RoomMessage.class);
+            String roomId = roomMessage.getRoomId();
+
+            //2.如果是"JOIN"指令，要在他的电话线上贴个专属标签
+            if("JOIN".equals(roomMessage.getType())){
+                session.getAttributes().put("roomId",roomId);
+                session.getAttributes().put("userId",roomMessage.getUserId());
+                System.out.println("👋 用户 " + roomMessage.getUserId() + " 加入了房间: " + roomId);
             }
+
+            //3.定向广播
+
+            //遍历花名册上的所有人，只有对方标签上的roomId和当前动作的roomId一样才进行转发
+            for(WebSocketSession s : sessions.values()){
+                if(s.isOpen()){
+                    String targetRoomId = (String)s.getAttributes().get("roomId");
+                    if(roomId.equals(targetRoomId)){
+                        s.sendMessage(new TextMessage(payload));
+                    }
+                }
+            }
+
+
+        }catch (Exception e){
+            System.err.println("消息解析或处理失败" + e.getMessage());
         }
+
     }
 
     /**
@@ -45,6 +76,7 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         //把用户从花名册中移除
         sessions.remove(session.getId());
-        System.out.println(" 用户断开连接！当前连接数：" + sessions.size());
+        String userId = (String)session.getAttributes().get("userId");
+        System.out.println(" 用户" + userId+"断开连接！当前连接数：" + sessions.size());
     }
 }
