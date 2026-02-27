@@ -58,4 +58,24 @@ public class RoomServiceImpl implements RoomService {
 
         return room;
     }
+
+    @Override
+    public Room getRoom(String roomId){
+        //1.拼装redis的key
+        String redisKey = "resonance:room" + roomId;
+        //2.从redis中取出数据
+        String roomJson = redisTemplate.opsForValue().get(redisKey);
+
+        //3.判断是否有数据
+        if(roomJson == null){
+            throw new RuntimeException("房间不存在或已解散");
+        }
+        //4.将json字符串转换成java对象
+        try{
+            Room room = objectMapper.readValue(roomJson, Room.class);
+            return room;
+        }catch (Exception e){
+            throw new RuntimeException("房间数据解析失败",e);
+        }
+    }
 }

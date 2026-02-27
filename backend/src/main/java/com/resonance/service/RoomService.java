@@ -10,4 +10,11 @@ public interface RoomService {
      * @return 创建好的房间完整信息
      */
     Room createRoom(String roomName, String hostId);
+
+    /**
+     * 根据房间 ID 查询房间信息
+     * @param roomId 房间的唯一标识
+     * @return 房间完整信息
+     */
+    Room getRoom(String roomId);
 }

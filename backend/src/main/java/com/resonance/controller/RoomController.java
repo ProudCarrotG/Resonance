@@ -28,4 +28,12 @@ public class RoomController {
 
         return roomService.createRoom(request.getRoomName(),request.getHostId());
     }
+    /**
+     * 查询房间状态的 API 接口
+     * 访问路径：GET http://localhost:8080/api/rooms/{roomId}
+     */
+    @GetMapping("/{roomId}")
+    public Room getRoom(@PathVariable String roomId) {
+        return roomService.getRoom(roomId);
+    }
 }
