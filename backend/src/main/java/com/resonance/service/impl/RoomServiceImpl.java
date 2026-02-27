@@ -2,6 +2,7 @@ package com.resonance.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resonance.domain.Room;
+import com.resonance.dto.RoomMessage;
 import com.resonance.service.RoomService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -76,6 +77,52 @@ public class RoomServiceImpl implements RoomService {
             return room;
         }catch (Exception e){
             throw new RuntimeException("房间数据解析失败",e);
+        }
+    }
+
+    @Override
+    public void updateRoomState(String roomId, RoomMessage message) {
+        String redisKey = "resonance:room" + roomId;
+
+        String roomJson = redisTemplate.opsForValue().get(redisKey);
+
+        //如果redis找不到房间，说明已经结束或者已经解散
+        if(roomJson == null) return;
+
+        try{
+            Room room  = objectMapper.readValue(roomJson,Room.class);
+
+            switch (message.getType()){
+                case "PLAY":
+                    room.setPlayStatus("PLAYING");
+                    if(message.getData()!=null){
+                        room.setCurrentTrackId(message.getData().toString());
+                    }
+                    break;
+                case "PAUSE":
+                    room.setPlayStatus("PAUSED");
+                    break;
+                case "SEEK"://拖动进度条
+                    long progress = 0L;
+                    if(message.getData()!=null && !message.getData().toString().isEmpty()){
+                        progress = Long.parseLong(message.getData().toString());
+                    }
+                    room.setCurrentProgress(progress);
+                    break;
+                case "SWITCH": // 切歌指令
+                    room.setPlayStatus("PLAYING"); // 切歌后通常自动播放
+                    if (message.getData() != null) {
+                        room.setCurrentTrackId(message.getData().toString());
+                    }
+                    room.setCurrentProgress(0L); // 切歌必须让进度条强行归零！(符合咱们空字段或重置字段按0处理的规则)
+                    break;            }
+            // 修改完之后需要重新将信息写回redis
+
+            redisTemplate.opsForValue().set(redisKey,objectMapper.writeValueAsString(room));
+
+
+        }catch(Exception e){
+            System.err.println("同步更新redis失败");
         }
     }
 }

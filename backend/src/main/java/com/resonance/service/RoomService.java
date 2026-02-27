@@ -1,6 +1,7 @@
 package com.resonance.service;
 
 import com.resonance.domain.Room;
+import com.resonance.dto.RoomMessage;
 
 public interface RoomService {
     /**
@@ -17,4 +18,9 @@ public interface RoomService {
      * @return 房间完整信息
      */
     Room getRoom(String roomId);
+
+    /**
+     * 根据 WebSocket 传来的指令，实时更新 Redis 中的房间播放状态
+     */
+    void updateRoomState(String roomId, RoomMessage message);
 }

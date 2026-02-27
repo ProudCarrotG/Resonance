@@ -2,6 +2,7 @@ package com.resonance.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resonance.dto.RoomMessage;
+import com.resonance.service.RoomService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -15,11 +16,13 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
     //这是一个及其重要的“花名册” ： 用来记住当前有哪些用户连着Session
     //使用ConcurrentHashMap，是为了保证多线程并发时的安全
     private static final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+    private final RoomService roomService;
     //引入json转换神器
     private final ObjectMapper objectMapper;
 
-    public RoomWebSocketHandler(ObjectMapper objectMapper){
+    public RoomWebSocketHandler(ObjectMapper objectMapper,RoomService roomService){
         this.objectMapper = objectMapper;
+        this.roomService = roomService;
     }
     /**
      * 当有新的连接建立时，会调用这个方法
@@ -49,7 +52,9 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
                 session.getAttributes().put("userId",roomMessage.getUserId());
                 System.out.println("👋 用户 " + roomMessage.getUserId() + " 加入了房间: " + roomId);
             }
-
+            if("PLAY".equals(roomMessage.getType()) || "PAUSE".equals(roomMessage.getType()) || "SEEK".equals(roomMessage.getType())||"SWITCH".equals(roomMessage.getType())){
+                roomService.updateRoomState(roomId,roomMessage);
+            }
             //3.定向广播
 
             //遍历花名册上的所有人，只有对方标签上的roomId和当前动作的roomId一样才进行转发
