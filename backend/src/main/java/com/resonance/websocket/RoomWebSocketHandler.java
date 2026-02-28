@@ -1,6 +1,7 @@
 package com.resonance.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.resonance.domain.Room;
 import com.resonance.dto.RoomMessage;
 import com.resonance.service.RoomService;
 import org.springframework.stereotype.Component;
@@ -50,9 +51,36 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
             if("JOIN".equals(roomMessage.getType())){
                 session.getAttributes().put("roomId",roomId);
                 session.getAttributes().put("userId",roomMessage.getUserId());
+                try{
+                    //查询redis中房间的信息
+                    Room room = roomService.getRoom(roomId);
+                    //同步房间信息
+                    RoomMessage syncMessage = new RoomMessage();
+                    syncMessage.setType("ROOM_SYNC");
+                    syncMessage.setRoomId(room.getRoomId());
+
+                    syncMessage.setData(room);
+                    session.sendMessage(new TextMessage(objectMapper.writeValueAsString(syncMessage)));
+                }catch (Exception e){
+                    RoomMessage errorMsg = new RoomMessage();
+                    errorMsg.setType("ERROR");
+                    errorMsg.setData("加入失败！找不到房间或房间已解散");
+                    session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorMsg)));
+                }
+
                 System.out.println("👋 用户 " + roomMessage.getUserId() + " 加入了房间: " + roomId);
             }
             if("PLAY".equals(roomMessage.getType()) || "PAUSE".equals(roomMessage.getType()) || "SEEK".equals(roomMessage.getType())||"SWITCH".equals(roomMessage.getType())){
+                Room room = roomService.getRoom(roomId);
+                String userId = (String)session.getAttributes().get("userId");
+                if(!room.getHostId().equals(userId)){
+
+                    RoomMessage errorMsg = new RoomMessage();
+                    errorMsg.setType("ERROR");
+                    errorMsg.setData("没有权限,只有房主才可以切歌");
+                    session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorMsg)));
+                    return;
+                }
                 roomService.updateRoomState(roomId,roomMessage);
             }
             //3.定向广播
@@ -107,8 +135,6 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
                         String targetRoomId = (String) s.getAttributes().get("roomId");
                         if (roomId.equals(targetRoomId)) {
                             s.sendMessage(new TextMessage(disbandPayload));
-                             //强制切断听众的连接
-                            s.close();
                         }
                     }
                 }

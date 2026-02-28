@@ -25,7 +25,6 @@ public class RoomController {
     @PostMapping("/create")
     public Room createRoom(@RequestBody CreateRoomRequest request){
         //Controller 本身不写业务逻辑，只负责“呼叫” Service 去干活
-
         return roomService.createRoom(request.getRoomName(),request.getHostId());
     }
     /**
