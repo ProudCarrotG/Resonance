@@ -10,6 +10,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -46,7 +47,15 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
             //1.将前端的发来的json字符串，转为RoomMessage
             RoomMessage roomMessage = objectMapper.readValue(payload,RoomMessage.class);
             String roomId = roomMessage.getRoomId();
+            if("PING".equals(roomMessage.getType())){
+                //记录用户最后的活跃时间
+                session.getAttributes().put("lastActiveTime", System.currentTimeMillis());
+                RoomMessage pongMessage = new RoomMessage();
+                pongMessage.setType("PONG");
 
+                session.sendMessage(new TextMessage(objectMapper.writeValueAsString(pongMessage)));
+                return;
+            }
             //2.如果是"JOIN"指令，要在他的电话线上贴个专属标签
             if("JOIN".equals(roomMessage.getType())){
                 session.getAttributes().put("roomId",roomId);
