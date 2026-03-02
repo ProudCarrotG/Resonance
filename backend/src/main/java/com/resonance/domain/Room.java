@@ -15,6 +15,8 @@ public class Room {
     private String roomName;        // 房间名称
     private String hostId;          // 房主标识（用来校验谁有权限切歌/控制进度）
 
+    private int ParticipantCount;
+
     private String currentTrackId;  // 当前正在播放的歌曲ID
     private Long currentProgress;   // 当前播放进度（精确到毫秒，最核心的同步字段）
     private String playStatus;      // 播放状态（WAITING, PLAYING, PAUSED）

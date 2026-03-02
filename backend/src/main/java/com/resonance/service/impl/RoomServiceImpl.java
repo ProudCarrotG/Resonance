@@ -1,5 +1,7 @@
 package com.resonance.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resonance.domain.Room;
 import com.resonance.domain.RoomHistory;
@@ -10,7 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.StyledEditorKit;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -97,13 +103,18 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public void updateRoomState(String roomId, RoomMessage message) {
         String redisKey = "resonance:room:" + roomId;
+        String lockKey = "resonance:lock:room:" + roomId;
 
-        String roomJson = redisTemplate.opsForValue().get(redisKey);
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey,"LOCKED",10,TimeUnit.SECONDS);
 
-        //如果redis找不到房间，说明已经结束或者已经解散
-        if(roomJson == null) return;
+        if(Boolean.FALSE.equals(acquired)){
+            throw new RuntimeException("当前有其他操作正在进行，请稍后再试");
+        }
 
         try{
+            String roomJson = redisTemplate.opsForValue().get(redisKey);
+            //如果redis找不到房间，说明已经结束或者已经解散
+            if(roomJson == null) return;
             Room room  = objectMapper.readValue(roomJson,Room.class);
 
             switch (message.getType()){
@@ -135,8 +146,10 @@ public class RoomServiceImpl implements RoomService {
             redisTemplate.opsForValue().set(redisKey,objectMapper.writeValueAsString(room));
 
 
-        }catch(Exception e){
+        }catch(Exception e) {
             System.err.println("同步更新redis失败");
+        }finally {
+            redisTemplate.delete(lockKey);
         }
     }
 
@@ -144,12 +157,18 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public boolean disbandRoomIfHost(String roomId, String userId) {
         String redisKey = "resonance:room:" + roomId;
-        String roomJson = redisTemplate.opsForValue().get(redisKey);
+        String lockKey  = "resonance:lock:room:" + roomId;
 
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey,"LOCKED",10,TimeUnit.SECONDS);
 
-        if (roomJson == null) return false;
+        if(Boolean.FALSE.equals(acquired)){
+            throw new RuntimeException("当前有其他操作运行，请稍后再试");
+        }
+
 
         try{
+            String roomJson = redisTemplate.opsForValue().get(redisKey);
+            if (roomJson == null) return false;
             Room room = objectMapper.readValue(roomJson,Room.class);
             if(userId.equals(room.getHostId())){
                 redisTemplate.delete(redisKey);
@@ -159,7 +178,73 @@ public class RoomServiceImpl implements RoomService {
 
         }catch (Exception e){
             System.err.println("❌ 检查并解散房间失败：" + e.getMessage());
+        }finally {
+            redisTemplate.delete(lockKey);
         }
         return false;
+    }
+
+    @Override
+    public boolean joinRoom(String roomId, String userId) {
+        //1.组装两个key，一个是房间数据的key，一个是用来做pv操作锁的key
+
+        String roomKey = "resonance:room:" + roomId;
+
+        String lockKey = "resonance:lock:room:" + roomId;
+
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(lockKey,"LOCKED",10,TimeUnit.SECONDS);
+
+        //拿不到锁，说明有线程或者服务器在使用
+
+        if(Boolean.FALSE.equals(acquired)){
+            //直接返回错误
+            throw new RuntimeException("当前房间太火爆了");
+        }
+
+        try{
+            String roomJson = redisTemplate.opsForValue().get(roomKey);
+
+            if(roomJson == null){
+                throw new RuntimeException("房间已经不存在或已经解散");
+            }
+            Room room = objectMapper.readValue(roomJson,Room.class);
+
+            room.setParticipantCount(room.getParticipantCount()+1);
+
+            redisTemplate.opsForValue().set(roomKey,objectMapper.writeValueAsString(room));
+            return true;
+        } catch (Exception e) {
+            System.err.println("加入房间异常" + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }finally {
+            redisTemplate.delete(lockKey);
+        }
+    }
+
+    @Override
+    public List<Room> getActiveRoomList(){
+        List<Room> roomList = new ArrayList<>();
+
+        try{
+            Set<String> keys = redisTemplate.keys("resonance:room:*");
+            if(keys!=null && !keys.isEmpty()){
+                keys.removeIf(key->key.contains(":lock:"));
+
+                List<String> roomJsons = redisTemplate.opsForValue().multiGet(keys);
+
+                if (roomJsons != null) {
+                    for(String json : roomJsons){
+                        roomList.add(objectMapper.readValue(json,Room.class));
+                    }
+                }
+            }
+
+
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return roomList;
     }
 }

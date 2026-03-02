@@ -3,6 +3,8 @@ package com.resonance.service;
 import com.resonance.domain.Room;
 import com.resonance.dto.RoomMessage;
 
+import java.util.List;
+
 public interface RoomService {
     /**
      * 创建一个新的听歌房间
@@ -30,4 +32,12 @@ public interface RoomService {
      * @return true表示房间被成功解散，false表示不需要解散
      */
     boolean disbandRoomIfHost(String roomId, String userId);
+
+
+    boolean joinRoom(String roomId,String userId);
+    /**
+     * 获取当前所有的房间
+     * @return 当前所有存活的房间
+     */
+    List<Room> getActiveRoomList();
 }
