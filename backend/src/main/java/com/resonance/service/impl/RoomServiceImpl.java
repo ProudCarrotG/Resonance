@@ -227,8 +227,7 @@ public class RoomServiceImpl implements RoomService {
 
         try{
             Set<String> keys = redisTemplate.keys("resonance:room:*");
-            if(keys!=null && !keys.isEmpty()){
-                keys.removeIf(key->key.contains(":lock:"));
+            if(!keys.isEmpty()){
 
                 List<String> roomJsons = redisTemplate.opsForValue().multiGet(keys);
 
@@ -238,8 +237,6 @@ public class RoomServiceImpl implements RoomService {
                     }
                 }
             }
-
-
 
         } catch (Exception e) {
             throw new RuntimeException(e);
