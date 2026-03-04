@@ -34,7 +34,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         // 4. 提取出真正的 Token 字符串 (去掉前缀 "Bearer ")
         String token = authHeader.substring(7);
-
+        System.out.println(token);
 
         //验证Token
         try{

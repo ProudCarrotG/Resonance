@@ -5,6 +5,7 @@ import com.resonance.domain.Room;
 import com.resonance.dto.CreateRoomRequest;
 import com.resonance.service.RoomService;
 import com.resonance.service.impl.RoomServiceImpl;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import org.springframework.web.bind.annotation.*;
 
@@ -55,8 +56,8 @@ public class RoomController {
      */
 
     @PostMapping("/{roomId}/join")
-
-    public ApiResponse<Boolean> joinRoom(@PathVariable String roomId,@RequestParam String userId ){
+    public ApiResponse<Boolean> joinRoom(@PathVariable String roomId, HttpServletRequest request){
+        String userId = (String)request.getAttribute("userId");
         return ApiResponse.success(roomService.joinRoom(roomId,userId));
     }
 
