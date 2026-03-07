@@ -24,7 +24,7 @@ public interface RoomService {
     /**
      * 根据 WebSocket 传来的指令，实时更新 Redis 中的房间播放状态
      */
-    void updateRoomState(String roomId, RoomMessage message);
+    void updateRoomState(String roomId, String userId,RoomMessage message);
 
 
     /**

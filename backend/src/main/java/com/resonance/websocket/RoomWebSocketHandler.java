@@ -1,6 +1,7 @@
 package com.resonance.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.resonance.common.ApiResponse;
 import com.resonance.domain.Room;
 import com.resonance.dto.RoomMessage;
 import com.resonance.service.RoomService;
@@ -10,7 +11,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -67,7 +67,6 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
                     RoomMessage syncMessage = new RoomMessage();
                     syncMessage.setType("ROOM_SYNC");
                     syncMessage.setRoomId(room.getRoomId());
-
                     syncMessage.setData(room);
                     session.sendMessage(new TextMessage(objectMapper.writeValueAsString(syncMessage)));
                 }catch (Exception e){
@@ -76,21 +75,23 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
                     errorMsg.setData("加入失败！找不到房间或房间已解散");
                     session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorMsg)));
                 }
-
                 System.out.println("👋 用户 " + roomMessage.getUserId() + " 加入了房间: " + roomId);
             }
             if("PLAY".equals(roomMessage.getType()) || "PAUSE".equals(roomMessage.getType()) || "SEEK".equals(roomMessage.getType())||"SWITCH".equals(roomMessage.getType())){
-                Room room = roomService.getRoom(roomId);
                 String userId = (String)session.getAttributes().get("userId");
-                if(!room.getHostId().equals(userId)){
+                try{
+                    roomService.updateRoomState(roomId,userId,roomMessage);
+                } catch (Exception e) {
+                    RoomMessage errMessage = new RoomMessage();
+                    errMessage.setType("ERROR");
 
-                    RoomMessage errorMsg = new RoomMessage();
-                    errorMsg.setType("ERROR");
-                    errorMsg.setData("没有权限,只有房主才可以切歌");
-                    session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorMsg)));
+                    errMessage.setData(e.getMessage());
+
+                    session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errMessage)));
+
                     return;
                 }
-                roomService.updateRoomState(roomId,roomMessage);
+
             }
             //3.定向广播
 

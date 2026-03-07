@@ -3,6 +3,7 @@ package com.resonance.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.resonance.annotation.RequireHost;
 import com.resonance.domain.Room;
 import com.resonance.domain.RoomHistory;
 import com.resonance.dto.RoomMessage;
@@ -12,14 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.StyledEditorKit;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
 @Service
 public class RoomServiceImpl implements RoomService {
     // Spring 官方提供的用来操作 Redis 的强大工具
@@ -101,7 +100,8 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public void updateRoomState(String roomId, RoomMessage message) {
+    @RequireHost
+    public void updateRoomState(String roomId,String userId, RoomMessage message) {
         String redisKey = "resonance:room:" + roomId;
         String lockKey = "resonance:lock:room:" + roomId;
 
@@ -152,7 +152,6 @@ public class RoomServiceImpl implements RoomService {
             redisTemplate.delete(lockKey);
         }
     }
-
 
     @Override
     public boolean disbandRoomIfHost(String roomId, String userId) {
