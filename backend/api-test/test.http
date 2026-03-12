@@ -1,7 +1,36 @@
-POST http://localhost:8080/api/rooms/create
+### 1. 注册一个新用户 (假设叫 Alice)
+POST http://localhost:8080/user/register
 Content-Type: application/json
 
 {
-  "roomName": "手搓代码高级俱乐部",
-  "hostId": "handzhao_001"
+  "username": "Alice",
+  "password": "password123"
 }
+
+### 2. Alice 登录 (获取 Token)
+# @name loginAlice
+POST http://localhost:8080/api/user/login
+Content-Type: application/json
+
+{
+  "username": "Alice",
+  "password": "password123"
+}
+
+### 3. Alice 创建一个房间 (注意替换 {{token}} 为上一步返回的 token)
+# 这一步会触发 JWT 拦截器
+@aliceToken = {{loginAlice.response.body.data.token}}
+
+POST http://localhost:8080/api/room/create
+Content-Type: application/json
+Authorization: Bearer {{aliceToken}}
+
+{
+  "roomName": "Alice的音乐派对",
+  "mediaUrl": "http://music.163.com/song/media/outer/url?id=12345.mp3",
+  "coverUrl": "http://example.com/cover.jpg"
+}
+
+### 4. 获取历史房间记录 (依然需要 Token)
+GET http://localhost:8080/api/room/history?userId=1
+Authorization: Bearer {{aliceToken}}

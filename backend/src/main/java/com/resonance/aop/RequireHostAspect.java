@@ -20,7 +20,9 @@ public class RequireHostAspect {
     @Autowired
     @Lazy
     private RoomService roomService;
+
     private static final Logger log = LoggerFactory.getLogger(RequireHostAspect.class);
+
     @Before("@annotation(com.resonance.annotation.RequireHost)")
     public void checkHostPermission(JoinPoint joinPoint){
         //1.获取被拦截方法的参数

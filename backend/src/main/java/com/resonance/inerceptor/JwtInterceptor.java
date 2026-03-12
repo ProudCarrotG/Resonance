@@ -38,7 +38,6 @@ public class JwtInterceptor implements HandlerInterceptor {
         //验证Token
         try{
             String userId = JwtUtils.parseToken(token);
-
             // 6.查验成功后，把 userId 贴在这个请求的“脑门”上！
             // 这样等请求流转到 Controller 时，Controller 就能直接从 request 里拿到 userId 了。
             request.setAttribute("userId", userId);
