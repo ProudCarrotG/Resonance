@@ -26,12 +26,12 @@ public class RoomServiceImpl implements RoomService {
 
     private final ObjectMapper objectMapper;
 
-    @Autowired
-    private RoomHistoryMapper roomHistoryMapper;
+    private final RoomHistoryMapper roomHistoryMapper;
     // 💡 构造器注入：Spring 官方极其推荐的写法，比加 @Autowired 注解更安全
-    public RoomServiceImpl(StringRedisTemplate redisTemplate, ObjectMapper objectMapper) {
+    public RoomServiceImpl(StringRedisTemplate redisTemplate, ObjectMapper objectMapper,RoomHistoryMapper roomHistoryMapper) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
+        this.roomHistoryMapper = roomHistoryMapper;
     }
 
     @Override
@@ -243,4 +243,11 @@ public class RoomServiceImpl implements RoomService {
 
         return roomList;
     }
+
+    @Override
+    public Boolean quitFromRoom(String roomId, String userId) {
+
+    }
+
+
 }

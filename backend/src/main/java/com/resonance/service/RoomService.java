@@ -40,4 +40,12 @@ public interface RoomService {
      * @return 当前所有存活的房间
      */
     List<Room> getActiveRoomList();
+
+
+    /**
+     * 推出当前房间
+     * @return 是否成功
+     */
+
+    Boolean quitFromRoom(String roomId,String userId);
 }

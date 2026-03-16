@@ -3,6 +3,7 @@ package com.resonance.domain;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 /**
  * 房间领域模型 (Entity)
@@ -23,5 +24,5 @@ public class Room {
 
     private LocalDateTime createdAt; // 房间创建时间
 
-
+    private Set<String> users;
 }

@@ -2,11 +2,8 @@ package com.resonance.controller;
 
 import com.resonance.common.ApiResponse;
 import com.resonance.domain.Room;
-import com.resonance.dto.CreateRoomRequest;
 import com.resonance.service.RoomService;
-import com.resonance.service.impl.RoomServiceImpl;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.Data;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -63,5 +60,16 @@ public class RoomController {
         return ApiResponse.success(roomService.joinRoom(roomId,userId));
     }
 
+    @PostMapping("/{roomId}/quit")
+    public ApiResponse<Boolean>quitFromRoom(HttpServletRequest httpServletRequest, @PathVariable String roomId){
+        String userId = (String)httpServletRequest.getAttribute("userId");
+
+        if(roomService.quitFromRoom(roomId,userId)){
+            return ApiResponse.success(Boolean.TRUE);
+        }else{
+            return ApiResponse.fail(500,"退出失败");
+        }
+
+    }
 
 }
