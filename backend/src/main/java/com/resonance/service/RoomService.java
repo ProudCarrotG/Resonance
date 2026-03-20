@@ -47,5 +47,5 @@ public interface RoomService {
      * @return 是否成功
      */
 
-    Boolean quitFromRoom(String roomId,String userId);
+    Boolean leaveRoom(String roomId,String userId);
 }

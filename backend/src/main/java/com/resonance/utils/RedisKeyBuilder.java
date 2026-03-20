@@ -1,0 +1,32 @@
+package com.resonance.utils;
+
+/**
+ * 统一的 Redis Key 生成器
+ */
+public class RedisKeyBuilder {
+
+    // 整个项目的根前缀
+    private static final String PROJECT_PREFIX = "resonance:";
+
+    /**
+     * 获取房间基本信息的 Key
+     * @return 结果例如：resonance:room:12345
+     */
+    public static String getRoomKey(String roomId) {
+        return PROJECT_PREFIX + "room:" + roomId;
+    }
+
+    /**
+     * 获取房间人员名单(Set)的 Key
+     */
+    public static String getRoomUsersKey(String roomId) {
+        return PROJECT_PREFIX + "room_users:" + roomId;
+    }
+
+    /**
+     * 获取房间操作分布式锁的 Key
+     */
+    public static String getRoomLockKey(String roomId) {
+        return PROJECT_PREFIX + "lock:room:" + roomId;
+    }
+}

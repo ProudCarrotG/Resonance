@@ -24,5 +24,4 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(roomWebSocketHandler, "/ws/room").setAllowedOrigins("*");
     }
 
-
 }

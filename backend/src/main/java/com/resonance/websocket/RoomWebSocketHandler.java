@@ -124,9 +124,10 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
         String roomId = (String) session.getAttributes().get("roomId");
         String userId = (String) session.getAttributes().get("userId");
 
-        System.out.println("💔 用户 " + userId + " 断开了连接");
 
         if (roomId != null && userId != null) {
+
+
             // 3. 呼叫大管家：看看这个退出的家伙是不是房主，需不需要炸毁房间？
             boolean isDisbanded = roomService.disbandRoomIfHost(roomId, userId);
 
@@ -148,6 +149,8 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
                         }
                     }
                 }
+            }else{
+                roomService.leaveRoom(roomId,userId);
             }
         }
     }

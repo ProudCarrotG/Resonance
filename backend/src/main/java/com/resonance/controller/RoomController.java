@@ -64,7 +64,7 @@ public class RoomController {
     public ApiResponse<Boolean>quitFromRoom(HttpServletRequest httpServletRequest, @PathVariable String roomId){
         String userId = (String)httpServletRequest.getAttribute("userId");
 
-        if(roomService.quitFromRoom(roomId,userId)){
+        if(roomService.leaveRoom(roomId,userId)){
             return ApiResponse.success(Boolean.TRUE);
         }else{
             return ApiResponse.fail(500,"退出失败");
