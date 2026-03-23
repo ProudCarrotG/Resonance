@@ -1,20 +1,28 @@
 package com.resonance.websocket;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resonance.common.ApiResponse;
 import com.resonance.domain.Room;
 import com.resonance.dto.RoomMessage;
 import com.resonance.service.RoomService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.web.servlet.JspTemplateAvailabilityProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+
+import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class RoomWebSocketHandler extends TextWebSocketHandler {
+
+    public static final Logger log = LoggerFactory.getLogger(RoomWebSocketHandler.class);
     //这是一个及其重要的“花名册” ： 用来记住当前有哪些用户连着Session
     //使用ConcurrentHashMap，是为了保证多线程并发时的安全
     private static final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
@@ -107,7 +115,7 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
 
 
         }catch (Exception e){
-            System.err.println("消息解析或处理失败" + e.getMessage());
+            log.error("消息解析或处理失败" + e.getMessage());
         }
 
     }
@@ -116,7 +124,7 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
      * 当有用户断开连接时触发（比如关掉了浏览器页面）
      */
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws JsonProcessingException, IOException {
         // 1. 先把这个断开的人从花名册划掉
         sessions.remove(session.getId());
 

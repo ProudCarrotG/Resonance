@@ -29,4 +29,12 @@ public class RedisKeyBuilder {
     public static String getRoomLockKey(String roomId) {
         return PROJECT_PREFIX + "lock:room:" + roomId;
     }
+
+
+    /**
+     * 获取用户登录失败次数的 Key
+     */
+    public static String getLoginFailKey(String username) {
+        return PROJECT_PREFIX + "login_fail:" + username;
+    }
 }

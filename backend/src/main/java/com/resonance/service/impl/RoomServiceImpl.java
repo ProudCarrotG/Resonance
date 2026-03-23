@@ -78,6 +78,7 @@ public class RoomServiceImpl implements RoomService {
             roomHistoryMapper.insert(roomHistory);
 
         }catch (Exception e){
+            log.error("❌ 创建房间失败", e);
             throw new RuntimeException("系统开小差了");
         }
 
@@ -87,7 +88,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public Room getRoom(String roomId){
         //1.拼装redis的key
-        String redisKey = RedisKeyBuilder.getRoomLockKey(roomId);
+        String redisKey = RedisKeyBuilder.getRoomKey(roomId);
         //2.从redis中取出数据
         String roomJson = redisTemplate.opsForValue().get(redisKey);
 
@@ -151,7 +152,7 @@ public class RoomServiceImpl implements RoomService {
 
 
         }catch(Exception e) {
-            System.err.println("同步更新redis失败");
+            log.error("同步更新redis失败");
         }finally {
             redisTemplate.delete(lockKey);
         }
@@ -179,7 +180,7 @@ public class RoomServiceImpl implements RoomService {
             return false;
 
         }catch (Exception e){
-            System.err.println("❌ 检查并解散房间失败：" + e.getMessage());
+            log.error("❌ 检查并解散房间失败：{}" , e.getMessage());
         }finally {
             redisTemplate.delete(lockKey);
         }
