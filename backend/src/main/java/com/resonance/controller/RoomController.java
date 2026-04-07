@@ -25,8 +25,6 @@ public class RoomController {
 
     @PostMapping("/create")
     public ApiResponse<Room> createRoom(@RequestParam String roomName,@RequestAttribute("userId") String hostId){
-
-
         //Controller 本身不写业务逻辑，只负责“呼叫” Service 去干活
         Room room =  roomService.createRoom(roomName,hostId);
 

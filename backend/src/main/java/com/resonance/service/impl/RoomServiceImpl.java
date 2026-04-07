@@ -43,7 +43,6 @@ public class RoomServiceImpl implements RoomService {
     public Room createRoom(String roomName,String hostId){
         //1.初始化一个全新的房间
         Room room = new Room();
-
         //生成一个没有横线的随机UUID作为房间专属ID
 
         String roomId = UUID.randomUUID().toString().replace("-","");
@@ -66,7 +65,7 @@ public class RoomServiceImpl implements RoomService {
 
             // 存入 Redis，并施加“阅后即焚”魔法：12小时后这个房间在内存中自动烟消云散！
             redisTemplate.opsForValue().set(redisKey, roomJson, 12, TimeUnit.HOURS);
-
+            redisTemplate.opsForSet().add(RedisKeyBuilder.ACTIVE_ROOMS_INDEX, roomId);
             //将数据存到mysql中
 
             RoomHistory roomHistory = new RoomHistory();
@@ -175,10 +174,10 @@ public class RoomServiceImpl implements RoomService {
             if(userId.equals(room.getHostId())){
                 redisTemplate.delete(redisKey);
                 redisTemplate.delete(usersKey);
+                redisTemplate.opsForSet().remove(RedisKeyBuilder.ACTIVE_ROOMS_INDEX,roomId);
                 return true;
             }
             return false;
-
         }catch (Exception e){
             log.error("❌ 检查并解散房间失败：{}" , e.getMessage());
         }finally {
@@ -231,24 +230,32 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public List<Room> getActiveRoomList(){
         List<Room> roomList = new ArrayList<>();
-
         try{
-            Set<String> keys = redisTemplate.keys("resonance:room:*");
-            if(!keys.isEmpty()){
+           Set<String> roomIds = redisTemplate.opsForSet().members(RedisKeyBuilder.ACTIVE_ROOMS_INDEX);
+           if(roomIds!= null && !roomIds.isEmpty()){
+               List<String> roomKeys = new ArrayList<>();
 
-                List<String> roomJsons = redisTemplate.opsForValue().multiGet(keys);
+               for(String roomId: roomIds) {
+                   roomKeys.add(RedisKeyBuilder.getRoomKey(roomId));
+               }
 
-                if (roomJsons != null) {
-                    for(String json : roomJsons){
-                        roomList.add(objectMapper.readValue(json,Room.class));
-                    }
-                }
-            }
+               List<String> rooms = redisTemplate.opsForValue().multiGet(roomKeys);
+               if(rooms != null){
+                   for(String room: rooms) {
+                       if(room!= null){
+                           Room roomObj = objectMapper.readValue(room, Room.class);
+                           roomList.add(roomObj);
+                       }
+
+                   }
+               }
+
+           }
 
         } catch (Exception e) {
+            log.error("获取当前活跃房间列表失败",e);
             throw new RuntimeException(e);
         }
-
         return roomList;
     }
 
@@ -266,6 +273,7 @@ public class RoomServiceImpl implements RoomService {
             redisTemplate.opsForSet().remove(usersKey,userId);
 
             String roomJson = redisTemplate.opsForValue().get(roomKey);
+
             if(roomJson == null){
                 return true;
             }

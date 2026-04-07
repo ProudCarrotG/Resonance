@@ -81,6 +81,7 @@ public class RoomWebSocketHandler extends TextWebSocketHandler {
                     RoomMessage errorMsg = new RoomMessage();
                     errorMsg.setType("ERROR");
                     errorMsg.setData("加入失败！找不到房间或房间已解散");
+                    log.error("加入房间失败" , e);
                     session.sendMessage(new TextMessage(objectMapper.writeValueAsString(errorMsg)));
                 }
                 System.out.println("👋 用户 " + roomMessage.getUserId() + " 加入了房间: " + roomId);

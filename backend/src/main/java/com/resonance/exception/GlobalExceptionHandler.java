@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ApiResponse<Void> handleRuntimeException(RuntimeException e){
         //打印到控制台，方便调试
-        log.warn("业务被异常拦截:{}", e.getMessage());
+        log.warn("业务被异常拦截:", e);
 
         //转换为标准的json格式返回
 

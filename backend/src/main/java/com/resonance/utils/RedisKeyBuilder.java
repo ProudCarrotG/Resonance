@@ -8,6 +8,8 @@ public class RedisKeyBuilder {
     // 整个项目的根前缀
     private static final String PROJECT_PREFIX = "resonance:";
 
+    public static final String ACTIVE_ROOMS_INDEX = "resonance:active_rooms_index";
+
     /**
      * 获取房间基本信息的 Key
      * @return 结果例如：resonance:room:12345
