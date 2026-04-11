@@ -48,4 +48,15 @@ public interface RoomService {
      */
 
     Boolean leaveRoom(String roomId,String userId);
+
+    /**
+     *  判断房间中是否存在某个人
+     */
+
+    Boolean isUserInRoom(String userId,String roomId);
+
+    /**
+     * 房间里的人掉线
+     */
+    void userOffline(String roomId,String userId);
 }

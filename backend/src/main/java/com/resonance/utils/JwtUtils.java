@@ -1,8 +1,7 @@
 package com.resonance.utils;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import com.resonance.exception.TokenInvalidException;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 
 import java.security.Key;
@@ -37,15 +36,26 @@ public class JwtUtils {
      * 只要 Token 被篡改过一个字母，或者时间过期了，这里会直接抛出极其严厉的异常！
      */
     public static String parseToken(String token) {
-        // 这一步是极其严苛的安检过程
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(SECRET_KEY) // 拿出咱们的机密钥匙去解密比对
-                .build()
-                .parseClaimsJws(token) // 🚨 核心排雷区：如果伪造或过期，这一步直接爆炸抛异常！
-                .getBody();
+        try {
+            // 🚨 核心排雷区：这里可能会抛出 jjwt 自己的各种异常
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(SECRET_KEY)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
 
-        // 安检通过，把当初存进去的 userId 完好无损地取出来
-        return claims.getSubject();
+            return claims.getSubject();
+
+        } catch (ExpiredJwtException e) {
+            // 精准拦截：如果底层抛出的是“过期异常”
+            // 我们就把它包装成我们自己的异常，并写上人话
+            throw new TokenInvalidException("Token已过期，请重新登录", e);
+
+        } catch (JwtException | IllegalArgumentException e) {
+            // 精准拦截：如果是被篡改了、格式坏了、或者是空字符串
+            // JwtException 是 jjwt 里面所有安全异常的父类
+            throw new TokenInvalidException("Token无效或被篡改", e);
+        }
     }
 
 }

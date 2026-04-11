@@ -207,7 +207,6 @@ public class RoomServiceImpl implements RoomService {
 
         try{
             String roomJson = redisTemplate.opsForValue().get(roomKey);
-
             if(roomJson == null){
                 throw new RuntimeException("房间已经不存在或已经解散");
             }
@@ -216,8 +215,8 @@ public class RoomServiceImpl implements RoomService {
             Room room = objectMapper.readValue(roomJson,Room.class);
             Long size = redisTemplate.opsForSet().size(usersKey);
             room.setParticipantCount(size != null ? size.intValue() : 0);
-
-            redisTemplate.opsForValue().set(roomKey,objectMapper.writeValueAsString(room));
+            redisTemplate.opsForValue().set(roomKey,objectMapper.writeValueAsString(room),10,TimeUnit.HOURS);
+            redisTemplate.expire(usersKey,10,TimeUnit.HOURS);
             return true;
         } catch (Exception e) {
             log.error("加入房间异常 : {}", e.getMessage());
@@ -290,5 +289,24 @@ public class RoomServiceImpl implements RoomService {
         }
     }
 
+    @Override
+    public Boolean isUserInRoom(String userId, String roomId) {
+        String usersKey = RedisKeyBuilder.getRoomUsersKey(roomId);
+        return redisTemplate.opsForSet().isMember(usersKey,userId);
+    }
+
+    @Override
+    public void userOffline(String roomId, String userId) {
+        String usersKey = RedisKeyBuilder.getRoomUsersKey(roomId);
+        String roomKey = RedisKeyBuilder.getRoomKey(roomId);
+        redisTemplate.opsForSet().remove(usersKey,userId);
+        Long curUsers = redisTemplate.opsForSet().size(usersKey);
+        if(curUsers!=null && curUsers == 0){
+            redisTemplate.expire(roomKey,10,TimeUnit.MINUTES);
+            redisTemplate.expire(usersKey,10,TimeUnit.MINUTES);
+        }
+
+
+    }
 
 }

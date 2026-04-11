@@ -1,6 +1,6 @@
 package com.resonance.config;
 
-import com.resonance.inerceptor.JwtInterceptor;
+import com.resonance.interceptor.JwtInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;

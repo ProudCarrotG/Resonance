@@ -1,14 +1,11 @@
-package com.resonance.inerceptor;
+package com.resonance.interceptor;
 
 
 import com.resonance.utils.JwtUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
-import org.springframework.web.HttpRequestHandler;
 import org.springframework.web.servlet.HandlerInterceptor;
-
-import java.net.http.HttpResponse;
 
 /**
  * JWT 安检门：拦截所有请求，核验 Token
